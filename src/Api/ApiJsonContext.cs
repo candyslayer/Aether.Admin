@@ -1,0 +1,25 @@
+using System.Text.Json.Serialization;
+using Aether.Application.DTOs;
+namespace Aether.Api;
+[JsonSerializable(typeof(LoginRequest))]
+[JsonSerializable(typeof(UserRequest))]
+[JsonSerializable(typeof(DepartmentRequest))]
+[JsonSerializable(typeof(CatalogRequest))]
+[JsonSerializable(typeof(MenuRequest))]
+[JsonSerializable(typeof(GrantRequest))]
+[JsonSerializable(typeof(ApiResponse<LoginResponse>))]
+[JsonSerializable(typeof(ApiResponse<Page<UserDto>>))]
+[JsonSerializable(typeof(ApiResponse<UserDto>))]
+[JsonSerializable(typeof(ApiResponse<List<DepartmentDto>>))]
+[JsonSerializable(typeof(ApiResponse<DepartmentDto>))]
+[JsonSerializable(typeof(ApiResponse<List<CatalogDto>>))]
+[JsonSerializable(typeof(ApiResponse<CatalogDto>))]
+[JsonSerializable(typeof(ApiResponse<List<MenuDto>>))]
+[JsonSerializable(typeof(ApiResponse<MenuDto>))]
+[JsonSerializable(typeof(ApiResponse<GrantDto>))]
+[JsonSerializable(typeof(ApiResponse<Page<AuditDto>>))]
+[JsonSerializable(typeof(ApiResponse<string[]>))]
+[JsonSerializable(typeof(ApiResponse<string>))]
+[JsonSerializable(typeof(Dictionary<string, string>))]
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+internal partial class ApiJsonContext : JsonSerializerContext;

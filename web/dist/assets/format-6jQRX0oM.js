@@ -1,0 +1,1 @@
+import{d as n}from"./ant-design-vue-2Qf8W2sm.js";function a(r,t="YYYY-MM-DD HH:mm:ss"){return r?n(r).format(t):"-"}function o(r){return r==null?"-":r<1e3?`${r}ms`:`${(r/1e3).toFixed(2)}s`}export{a,o as f};

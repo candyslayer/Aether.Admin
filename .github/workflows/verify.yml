@@ -1,0 +1,52 @@
+name: Verify
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  linux-aot:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: aether_admin_ci
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-database-password
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U postgres" --health-interval 5s --health-retries 20
+      redis:
+        image: redis:8
+        ports: ['6379:6379']
+    env:
+      AETHER_DATABASE: Host=localhost;Database=aether_admin_ci;Username=postgres;Password=ci-database-password
+      ConnectionStrings__Database: Host=localhost;Database=aether_admin_ci;Username=postgres;Password=ci-database-password
+      ConnectionStrings__Redis: localhost:6379
+      Jwt__Key: ci-only-test-signing-key-with-at-least-32-bytes
+      AETHER_ADMIN_PASSWORD: CiAdminPassword2026!
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '10.0.x' }
+      - run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+      - run: dotnet tool restore
+      - run: dotnet build -c Release
+      - run: dotnet run --project tools/DbAdmin -- apply-sql deploy/init.sql
+      - run: dotnet run --project tools/DbAdmin -- bootstrap
+      - name: Provision isolation tenant
+        run: dotnet run --project tools/DbAdmin -- bootstrap
+        env:
+          AETHER_TENANT_CODE: isolation-test
+      - run: dotnet publish src/Api -r linux-x64 -c Release -p:PublishAot=true -o artifacts/native
+      - name: Test native executable
+        shell: pwsh
+        run: |
+          $process = Start-Process ./artifacts/native/Api -ArgumentList '--urls','http://127.0.0.1:5080' -PassThru -RedirectStandardOutput artifacts/api.log -RedirectStandardError artifacts/api-error.log
+          try {
+            for ($i=0; $i -lt 30; $i++) {
+              try { Invoke-WebRequest http://127.0.0.1:5080/health/live -NoProxy | Out-Null; break } catch { Start-Sleep -Seconds 1 }
+            }
+            ./tests/integration.ps1 -BaseUrl http://127.0.0.1:5080 -OtherTenantCode isolation-test
+          } finally { Stop-Process -Id $process.Id -ErrorAction SilentlyContinue }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-validation
+          path: artifacts/
